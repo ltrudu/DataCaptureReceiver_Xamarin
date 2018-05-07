@@ -1,7 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    >
-</LinearLayout>
+    tools:context="com.symbol.datacapturereceiver.MainActivity">
+    <EditText
+        android:id="@+id/et_results"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/ll_scan"
+        android:gravity="top"
+        android:maxLines="999"
+        android:scrollbars="vertical"
+        android:inputType="textMultiLine" />
+    <LinearLayout
+        android:id="@+id/ll_scan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/ll_plugin"
+        android:layout_alignParentBottom="false"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/button_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:text="Start Scan" />
+        <Button
+            android:id="@+id/button_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:text="Stop Scan" />
+        <Button
+            android:id="@+id/button_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:text="Toggle Scan" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/ll_plugin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/ll_profiles"
+        android:layout_alignParentBottom="false"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/button_enable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:text="Enable" />
+        <Button
+            android:id="@+id/button_disable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:text="Disable" />
+        <Button
+            android:id="@+id/button_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:text="Clear"
+            android:visibility="visible" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/ll_profiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_weight="0.3"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/button_create"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Create Profile"
+            android:visibility="visible" />
+        <Button
+            android:id="@+id/button_import"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Import Profile"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/button_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Delete Profile" />
+        <Button
+            android:id="@+id/button_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Switch Params" />
+    </LinearLayout>
+</RelativeLayout>

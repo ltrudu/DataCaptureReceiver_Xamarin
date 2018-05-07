@@ -54,11 +54,19 @@
     <Reference Include="Mono.Android" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataWedgeConstants.cs" />
+    <Compile Include="DWProfileBase.cs" />
+    <Compile Include="DWProfileChecker.cs" />
+    <Compile Include="DWProfileCommandBase.cs" />
+    <Compile Include="DWProfileCreate.cs" />
+    <Compile Include="DWProfileSetConfig.cs" />
+    <Compile Include="DWSwitchContinuousMode.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <AndroidAsset Include="Assets\dwprofile_datacapture.db" />
     <None Include="GettingStarted.Xamarin" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
