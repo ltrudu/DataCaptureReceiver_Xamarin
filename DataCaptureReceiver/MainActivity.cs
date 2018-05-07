@@ -68,12 +68,20 @@ namespace DataCaptureReceiver
         private static string mIntentAction = "com.symbol.datacapturereceiver.RECVR";
         private static string mIntentCategory = "android.intent.category.DEFAULT";
         private static string mProfileName = "DataCaptureReceiverXAM";
-        private EditText et_results;
+        private TextView tv_results;
         private string mResults = "";
+        private ScrollView sv_results;
+
         private bool mContinuous = false;
-        private Date mProfilCreateStartDate = null;
+        private Date mProfileProcessingStartDate = null;
 
         private string mSeparator = "-----------------------------------";
+
+        /*
+        Handler and runnable to scroll down textview
+        */
+        private Handler mScrollDownHandler = null;
+        private Runnable mScrollDownRunnable = null;
 
         /**
         * Local Broadcast receiver
@@ -91,7 +99,7 @@ namespace DataCaptureReceiver
 
             public override void OnReceive(Context context, Intent intent)
             {
-                if(Receive != null )
+                if (Receive != null)
                     Receive(intent);
             }
         }
@@ -109,59 +117,70 @@ namespace DataCaptureReceiver
             mMessageReceiver = new MyBroadcastReceiver();
             mMessageReceiver.Receive += delegate (Intent intent) { HandleDecodeData(intent); };
 
-            et_results = FindViewById<EditText>(Resource.Id.et_results);
-            et_results.MovementMethod = new ScrollingMovementMethod();
+            tv_results = FindViewById<TextView>(Resource.Id.tv_results);
+            sv_results = FindViewById<ScrollView>(Resource.Id.sv_results);
+
 
             // Setup buttons behaviors
             Button btStart = FindViewById<Button>(Resource.Id.button_start);
-            btStart.Click += delegate {
+            btStart.Click += delegate
+            {
                 SendDataWedgeIntentWithExtra(DataWedgeConstants.DWAPI_ACTION_SOFTSCANTRIGGER, DataWedgeConstants.EXTRA_PARAMETER, DataWedgeConstants.DWAPI_START_SCANNING);
             };
 
             Button btStop = FindViewById<Button>(Resource.Id.button_stop);
-            btStop.Click += delegate {
+            btStop.Click += delegate
+            {
                 SendDataWedgeIntentWithExtra(DataWedgeConstants.DWAPI_ACTION_SOFTSCANTRIGGER, DataWedgeConstants.EXTRA_PARAMETER, DataWedgeConstants.DWAPI_STOP_SCANNING);
             };
 
             Button btToggle = FindViewById<Button>(Resource.Id.button_toggle);
-            btToggle.Click += delegate {
+            btToggle.Click += delegate
+            {
                 SendDataWedgeIntentWithExtra(DataWedgeConstants.DWAPI_ACTION_SOFTSCANTRIGGER, DataWedgeConstants.EXTRA_PARAMETER, DataWedgeConstants.DWAPI_TOGGLE_SCANNING);
             };
 
             Button btEnable = FindViewById<Button>(Resource.Id.button_enable);
-            btEnable.Click += delegate {
+            btEnable.Click += delegate
+            {
                 SendDataWedgeIntentWithExtra(DataWedgeConstants.DWAPI_ACTION_SCANNERINPUTPLUGIN, DataWedgeConstants.EXTRA_PARAMETER, DataWedgeConstants.DWAPI_PARAMETER_SCANNERINPUTPLUGIN_ENABLE);
             };
 
             Button btDisable = FindViewById<Button>(Resource.Id.button_disable);
-            btDisable.Click += delegate {
+            btDisable.Click += delegate
+            {
                 SendDataWedgeIntentWithExtra(DataWedgeConstants.DWAPI_ACTION_SCANNERINPUTPLUGIN, DataWedgeConstants.EXTRA_PARAMETER, DataWedgeConstants.DWAPI_PARAMETER_SCANNERINPUTPLUGIN_DISABLE);
             };
 
             Button btCreate = FindViewById<Button>(Resource.Id.button_create);
-            btCreate.Click += delegate {
+            btCreate.Click += delegate
+            {
                 CreateProfileAsync();
             };
 
             Button btImport = FindViewById<Button>(Resource.Id.button_import);
-            btImport.Click += delegate {
+            btImport.Click += delegate
+            {
                 ImportProfile("dwprofile_datacapture");
             };
 
             Button btDelete = FindViewById<Button>(Resource.Id.button_delete);
-            btDelete.Click += delegate {
+            btDelete.Click += delegate
+            {
                 DeleteProfile();
             };
 
             Button btSwitch = FindViewById<Button>(Resource.Id.button_switch);
-            btSwitch.Click += delegate {
+            btSwitch.Click += delegate
+            {
                 SwitchScannerParamsAsync();
             };
 
             Button btClear = FindViewById<Button>(Resource.Id.button_clear);
-            btClear.Click += delegate {
+            btClear.Click += delegate
+            {
                 mResults = "";
-                et_results.Text = mResults;
+                tv_results.Text = mResults;
             };
 
 
@@ -178,6 +197,7 @@ namespace DataCaptureReceiver
             myFilter.AddAction(mIntentAction);
             myFilter.AddCategory(mIntentCategory);
             this.ApplicationContext.RegisterReceiver(mMessageReceiver, myFilter);
+            mScrollDownHandler = new Handler(Looper.MainLooper);
         }
 
         protected override void OnPause()
@@ -282,15 +302,35 @@ namespace DataCaptureReceiver
             return returnstring;
         }
 
+
         private void AddLineToResults(string lineToAdd)
         {
-            this.RunOnUiThread(()=> {
-  
-                mResults += lineToAdd + "\n";
-                et_results.Text = mResults;
-        });
-    }
+            mResults += lineToAdd + "\n";
+            UpdateAndScrollDownTextView();
+        }
 
+        private void UpdateAndScrollDownTextView()
+        {
+            if (mScrollDownRunnable == null)
+            {
+                mScrollDownRunnable = new Runnable(() =>
+                {            
+                    RunOnUiThread(() =>
+                    {
+
+                        tv_results.Text = mResults;
+                        sv_results.FullScroll(Android.Views.FocusSearchDirection.Down);
+                    });
+                });           
+            }
+            else
+            {
+                // A new line has been added while we were waiting to scroll down
+                // reset handler to repost it....
+                mScrollDownHandler.RemoveCallbacks(mScrollDownRunnable);
+            }
+            mScrollDownHandler.PostDelayed(mScrollDownRunnable, 200);
+        }
 
         private void SendDataWedgeIntentWithExtra(string action, string extraKey, string extraValue)
         {
@@ -328,7 +368,7 @@ namespace DataCaptureReceiver
             string finalFilePathToWrite = Path.Combine(autoImportDir, finalFileName);
             try
             {
-                if(File.Exists(finalFilePathToWrite))
+                if (File.Exists(finalFilePathToWrite))
                 {
                     AddLineToResults("Deleting old db file.");
                     File.Delete(finalFilePathToWrite);
@@ -353,7 +393,7 @@ namespace DataCaptureReceiver
                         binwriter.Close();
                         binreader.Close();
                     }
-                }             
+                }
 
                 AddLineToResults("Total byte copied: " + totalBytesWritten);
 
@@ -384,16 +424,17 @@ namespace DataCaptureReceiver
         {
             mContinuous = !mContinuous;
             // Store the current Date (to calculate elapsed time)
-            mProfilCreateStartDate = new Date();
+            mProfileProcessingStartDate = new Date();
             DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(mContinuous, this, mProfileName, 30000);
-            switchContinuous.Execute((switchContinuousResult) => {
+            switchContinuous.Execute((switchContinuousResult) =>
+            {
                 if (string.IsNullOrEmpty(switchContinuousResult.Error))
                 {
                     // Force "Not Continuous" mode succeeded.
                     AddLineToResults(mContinuous ? "Profile: " + switchContinuousResult.ProfileName + " switched to Continuous mode" : " switched to normal mode");
                     // Let's calculate the elapsed time since the begining of the process
                     Date current = new Date();
-                    long timeDiff = current.Time - mProfilCreateStartDate.Time;
+                    long timeDiff = current.Time - mProfileProcessingStartDate.Time;
                     AddLineToResults("Switch params took: " + timeDiff + " ms to process.");
                     AddLineToResults(mSeparator);
                 }
@@ -408,9 +449,10 @@ namespace DataCaptureReceiver
         private void CreateProfileAsync()
         {
             // Store the current Date (to calculate elapsed time)
-            mProfilCreateStartDate = new Date();
+            mProfileProcessingStartDate = new Date();
             DWProfileChecker checker = new DWProfileChecker(this, mProfileName, 30000);
-            checker.Execute((profileCheckerResults)=> {
+            checker.Execute((profileCheckerResults) =>
+            {
                 if (string.IsNullOrEmpty(profileCheckerResults.Error))
                 {
                     if (profileCheckerResults.Exists)
@@ -418,14 +460,15 @@ namespace DataCaptureReceiver
                         // Profile has been found, setting to not continuous mode
                         AddLineToResults("Profile " + profileCheckerResults.ProfileName + " found in DW profiles list.\n Forcing profile to not continuous mode.");
                         DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(false, this, mProfileName, 30000);
-                        switchContinuous.Execute((switchContinuousResult) => {
+                        switchContinuous.Execute((switchContinuousResult) =>
+                        {
                             if (string.IsNullOrEmpty(switchContinuousResult.Error))
                             {
                                 // Force "Not Continuous" mode succeeded.
                                 AddLineToResults("Params switched to not continuous on profile: " + switchContinuousResult.ProfileName + " succeeded");
                                 // Let's calculate the elapsed time since the begining of the process
                                 Date current = new Date();
-                                long timeDiff = current.Time - mProfilCreateStartDate.Time;
+                                long timeDiff = current.Time - mProfileProcessingStartDate.Time;
                                 AddLineToResults("Check+Switch took: " + timeDiff + " ms to process.");
                                 AddLineToResults(mSeparator);
                             }
@@ -441,13 +484,15 @@ namespace DataCaptureReceiver
                         // Profile not found, let's create a new one
                         AddLineToResults("Profile " + profileCheckerResults.ProfileName + " not found in DW profiles list. Creating profile.");
                         DWProfileCreate profileCreator = new DWProfileCreate(this, mProfileName, 300000);
-                        profileCreator.Execute((creationResult) => {
-                            if(string.IsNullOrEmpty(creationResult.Error))
+                        profileCreator.Execute((creationResult) =>
+                        {
+                            if (string.IsNullOrEmpty(creationResult.Error))
                             {
                                 // Profile creation succeeded, let's set this profile initial parameters
                                 AddLineToResults("Profile: " + creationResult.ProfileName + " created with success.\nSetting config now.");
                                 DWProfileSetConfig profileSetConfig = new DWProfileSetConfig(mIntentAction, mIntentCategory, this, mProfileName, 30000);
-                                profileSetConfig.Execute((setConfigResult) => {
+                                profileSetConfig.Execute((setConfigResult) =>
+                                {
                                     if (string.IsNullOrEmpty(setConfigResult.Error))
                                     {
                                         // Initial parameters set successfully, let's force this profile to not continuous mode
@@ -455,14 +500,15 @@ namespace DataCaptureReceiver
                                         // the config is exactly what we want...
                                         AddLineToResults("Set config on profile: " + setConfigResult.ProfileName + " succeeded\n Forcing profile to not continuous mode.");
                                         DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(false, this, mProfileName, 30000);
-                                        switchContinuous.Execute((switchContinuousResult) => {
+                                        switchContinuous.Execute((switchContinuousResult) =>
+                                        {
                                             if (string.IsNullOrEmpty(switchContinuousResult.Error))
                                             {
                                                 // Force "Not Continuous" mode succeeded.
                                                 AddLineToResults("Params switched to not continuous on profile: " + switchContinuousResult.ProfileName + " succeeded");
                                                 // Let's calculate the elapsed time since the begining of the process
                                                 Date current = new Date();
-                                                long timeDiff = current.Time - mProfilCreateStartDate.Time;
+                                                long timeDiff = current.Time - mProfileProcessingStartDate.Time;
                                                 AddLineToResults("Check+Create+Set+Switch took: " + timeDiff + " ms to process.");
                                                 AddLineToResults(mSeparator);
                                             }

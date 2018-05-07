@@ -4,15 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.symbol.datacapturereceiver.MainActivity">
-    <EditText
-        android:id="@+id/et_results"
+    <ScrollView
+        android:id="@+id/sv_results"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_above="@+id/ll_scan"
-        android:gravity="top"
-        android:maxLines="999"
-        android:scrollbars="vertical"
-        android:inputType="textMultiLine" />
+        android:layout_alignParentStart="true">
+        <TextView
+            android:id="@+id/tv_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/ll_scan"
+            android:inputType="textMultiLine" />
+    </ScrollView>
     <LinearLayout
         android:id="@+id/ll_scan"
         android:layout_width="match_parent"
