@@ -19,17 +19,22 @@ A context to work with intents
  */
         protected Context mContext = null;
 
-        /*
-        The profile we are working on
-         */
-        protected String mProfileName = "";
+        public class DWSettings
+        {
+            /*
+            The profile we are working on
+             */
+            public String ProfileName = "";
 
-        /*
-        A time out, in case we don't receive an answer
-        from DataWedge
-         */
-        protected long mTimeoutMS = 5000;
+            /*
+            A time out, in case we don't receive an answer
+            from DataWedge
+             */
+            public long TimeOut = 5000;
+        }
 
+
+        protected DWSettings Settings = null;
         /*
         A handler that will be used by the derived
         class to prevent waiting to loong for DW in case
@@ -44,11 +49,9 @@ A context to work with intents
         protected Action mTimeOutAction = null;
 
 
-    public DWProfileBase(Context aContext, String aProfile, long aTimeOut)
+    public DWProfileBase(Context aContext)
     {
         mContext = aContext;
-        mProfileName = aProfile;
-        mTimeoutMS = aTimeOut;
     }
 
     protected void SendDataWedgeIntentWithExtra(String action, String extraKey, String extraValue)
@@ -65,8 +68,10 @@ A context to work with intents
         mContext.SendBroadcast(dwIntent);
     }
 
-    protected virtual void Execute()
+    protected virtual void Execute(DWSettings settings)
     {
+            Settings = settings;
+
             if(mTimeOutAction == null)
             {
                 mTimeOutAction = new Action(() =>
@@ -81,7 +86,7 @@ A context to work with intents
         /*
         Start time out mechanism
          */
-        mTimeOutHandler.PostDelayed(mTimeOutAction, mTimeoutMS);
+        mTimeOutHandler.PostDelayed(mTimeOutAction, Settings.TimeOut);
     }
 
     protected abstract void OnError(String error);

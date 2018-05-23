@@ -14,33 +14,33 @@ namespace DataCaptureReceiver
 {
     public class DWProfileCreate : DWProfileCommandBase
     {
-        public DWProfileCreate(Context aContext, String aProfile, long aTimeOut) : base(aContext, aProfile, aTimeOut)
+        public DWProfileCreate(Context aContext) : base(aContext)
         {
         }
 
 
-        public new void Execute(Action<CommandBaseResults> callback)
+        public new void Execute(DWSettings settings, Action<CommandBaseResults> callback)
         {
             /*
             Call base class Execute to register command result
             broadcast receiver and launch timeout mechanism
              */
-            base.Execute(callback);
+            base.Execute(settings, callback);
 
             /*
             Create the profile
              */
-            CreateProfile(mProfileName);
+            CreateProfile(settings);
         }
 
-        private void CreateProfile(String profileName)
+        private void CreateProfile(DWSettings settings)
         {
             // On crée le profil via l'intent CREATE_PROFILE
             // NB : on peut envoyer cet intent sans soucis même si le profil existe déjà
             // On perdrait plus de temps si on recherchait si le profil existe avant de lancer la création
             SendDataWedgeIntentWithExtraRequestResult(DataWedgeConstants.ACTION_DATAWEDGE_FROM_6_2,
                     DataWedgeConstants.EXTRA_CREATE_PROFILE,
-                    profileName);
+                    settings.ProfileName);
 
         }
     }

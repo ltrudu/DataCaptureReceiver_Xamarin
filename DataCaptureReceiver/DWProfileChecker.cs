@@ -15,7 +15,7 @@ namespace DataCaptureReceiver
 {
     public class DWProfileChecker : DWProfileBase
     {
-        public DWProfileChecker(Context aContext, String aProfile, long aTimeOut) : base(aContext, aProfile, aTimeOut)
+        public DWProfileChecker(Context aContext) : base(aContext)
         {
             mBroadcastReceiver = new CheckProfileReceiver(this);
         }
@@ -54,7 +54,7 @@ namespace DataCaptureReceiver
         ///     bool: exists -> true if the profile exists
         ///     string: error -> not null and not empty if an error occurred
         /// </param>
-        public void Execute(Action<ActionResult> callback)
+        public void Execute(DWSettings settings, Action<ActionResult> callback)
         {
             mProfileExistsCallback = callback;
 
@@ -75,7 +75,7 @@ namespace DataCaptureReceiver
             /*
             Launch timeout mechanism
              */
-            base.Execute();
+            base.Execute(settings);
         }
 
         protected class CheckProfileReceiver : BroadcastReceiver
@@ -94,10 +94,10 @@ namespace DataCaptureReceiver
                     //  6.2 API to GetProfileList
                     string[] profilesList = intent.GetStringArrayExtra(DataWedgeConstants.EXTRA_RESULT_GET_PROFILE_LIST);
                     //  Profile list for 6.2 APIs
-                    bool exists = profilesList.Contains(mProfileChecker.mProfileName);
+                    bool exists = profilesList.Contains(mProfileChecker.Settings.ProfileName);
                     if (mProfileChecker.mProfileExistsCallback != null)
                     {
-                        mProfileChecker.mProfileExistsCallback(new ActionResult { ProfileName = mProfileChecker.mProfileName, Exists = exists, Error = null });
+                        mProfileChecker.mProfileExistsCallback(new ActionResult { ProfileName = mProfileChecker.Settings.ProfileName, Exists = exists, Error = null });
                         mProfileChecker.CleanAll();
                     }
                 }
@@ -111,14 +111,14 @@ namespace DataCaptureReceiver
         {
             if (mProfileExistsCallback != null)
             {
-                mProfileExistsCallback(new ActionResult { ProfileName = mProfileName, Exists = false, Error = error });
+                mProfileExistsCallback(new ActionResult { ProfileName = Settings.ProfileName, Exists = false, Error = error });
                 CleanAll();
             }
         }
 
         protected override void CleanAll()
         {
-            mProfileName = "";
+            Settings.ProfileName = "";
             mProfileExistsCallback = null;
             mContext.ApplicationContext.UnregisterReceiver(mBroadcastReceiver);
             base.CleanAll();

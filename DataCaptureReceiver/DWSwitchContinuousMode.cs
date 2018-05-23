@@ -14,31 +14,34 @@ namespace DataCaptureReceiver
 {
     public class DWSwitchContinuousMode : DWProfileCommandBase
     {
-        private bool mContinuousMode = false;
-
-        public DWSwitchContinuousMode(bool aContinuous, Context aContext, string aProfile, long aTimeOut) : base(aContext, aProfile, aTimeOut)
+        public class DWSwitchContinuousModeSettings : DWProfileBase.DWSettings
         {
-            mContinuousMode = aContinuous;
+            public bool ContinuousMode = false;
         }
 
-        public new void Execute(Action<CommandBaseResults> callback)
+
+        public DWSwitchContinuousMode(Context aContext) : base(aContext)
+        {
+        }
+
+        public void Execute(DWSwitchContinuousModeSettings settings, Action<CommandBaseResults> callback)
         {
             /*
             Call base class Execute to register command result
             broadcast receiver and launch timeout mechanism
              */
-            base.Execute(callback);
+            base.Execute(settings, callback);
 
             /*
             Create the profile
              */
-            SwitchToContinuousMode(mProfileName);
+            SwitchToContinuousMode(settings);
         }
 
-        private void SwitchToContinuousMode(String profileName)
+        private void SwitchToContinuousMode(DWSwitchContinuousModeSettings settings)
         {
             Bundle barcodeProps = new Bundle();
-            if (mContinuousMode)
+            if (settings.ContinuousMode)
             {
                 barcodeProps.PutString("aim_type", "5");
                 barcodeProps.PutString("beam_timer", "0");

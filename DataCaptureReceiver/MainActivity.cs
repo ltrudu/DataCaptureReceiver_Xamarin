@@ -425,8 +425,15 @@ namespace DataCaptureReceiver
             mContinuous = !mContinuous;
             // Store the current Date (to calculate elapsed time)
             mProfileProcessingStartDate = new Date();
-            DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(mContinuous, this, mProfileName, 30000);
-            switchContinuous.Execute((switchContinuousResult) =>
+            DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(this);
+            DWSwitchContinuousMode.DWSwitchContinuousModeSettings settings = new DWSwitchContinuousMode.DWSwitchContinuousModeSettings
+            {
+                ProfileName = mProfileName,
+                TimeOut = 30000,
+                ContinuousMode = mContinuous
+                
+            };
+            switchContinuous.Execute(settings, (switchContinuousResult) =>
             {
                 if (string.IsNullOrEmpty(switchContinuousResult.Error))
                 {
@@ -450,8 +457,9 @@ namespace DataCaptureReceiver
         {
             // Store the current Date (to calculate elapsed time)
             mProfileProcessingStartDate = new Date();
-            DWProfileChecker checker = new DWProfileChecker(this, mProfileName, 30000);
-            checker.Execute((profileCheckerResults) =>
+            DWProfileChecker checker = new DWProfileChecker(this);
+            DWProfileChecker.DWSettings checkerSettings = new DWProfileBase.DWSettings { ProfileName = mProfileName, TimeOut = 30000 };
+            checker.Execute(checkerSettings, (profileCheckerResults) =>
             {
                 if (string.IsNullOrEmpty(profileCheckerResults.Error))
                 {
@@ -459,8 +467,14 @@ namespace DataCaptureReceiver
                     {
                         // Profile has been found, setting to not continuous mode
                         AddLineToResults("Profile " + profileCheckerResults.ProfileName + " found in DW profiles list.\n Forcing profile to not continuous mode.");
-                        DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(false, this, mProfileName, 30000);
-                        switchContinuous.Execute((switchContinuousResult) =>
+                        DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(this);
+                        DWSwitchContinuousMode.DWSwitchContinuousModeSettings switchSettings = new DWSwitchContinuousMode.DWSwitchContinuousModeSettings
+                        {
+                            ProfileName = mProfileName,
+                            TimeOut = 30000,
+                            ContinuousMode = false
+                        };
+                        switchContinuous.Execute(switchSettings, (switchContinuousResult) =>
                         {
                             if (string.IsNullOrEmpty(switchContinuousResult.Error))
                             {
@@ -483,41 +497,39 @@ namespace DataCaptureReceiver
                     {
                         // Profile not found, let's create a new one
                         AddLineToResults("Profile " + profileCheckerResults.ProfileName + " not found in DW profiles list. Creating profile.");
-                        DWProfileCreate profileCreator = new DWProfileCreate(this, mProfileName, 300000);
-                        profileCreator.Execute((creationResult) =>
+                        DWProfileCreate profileCreator = new DWProfileCreate(this);
+                        DWProfileCreate.DWSettings createSettings = new DWProfileCreate.DWSettings
+                        {
+                            ProfileName = mProfileName,
+                            TimeOut = 30000
+                        };
+                        profileCreator.Execute(createSettings, (creationResult) =>
                         {
                             if (string.IsNullOrEmpty(creationResult.Error))
                             {
                                 // Profile creation succeeded, let's set this profile initial parameters
                                 AddLineToResults("Profile: " + creationResult.ProfileName + " created with success.\nSetting config now.");
-                                DWProfileSetConfig profileSetConfig = new DWProfileSetConfig(mIntentAction, mIntentCategory, this, mProfileName, 30000);
-                                profileSetConfig.Execute((setConfigResult) =>
+                                DWProfileSetConfig profileSetConfig = new DWProfileSetConfig(this);
+                                DWProfileSetConfig.DWProfileSetConfigSettings setConfigSettings = new DWProfileSetConfig.DWProfileSetConfigSettings
+                                {
+                                    ProfileName = mProfileName,
+                                    TimeOut = 30000,
+                                    IntentAction = mIntentAction,
+                                    IntentCategory = mIntentCategory,
+                                    AggressiveMode = false
+                                };
+                                profileSetConfig.Execute(setConfigSettings, (setConfigResult) =>
                                 {
                                     if (string.IsNullOrEmpty(setConfigResult.Error))
                                     {
                                         // Initial parameters set successfully, let's force this profile to not continuous mode
                                         // It is not necessary since the default mode is "not continuous", but we like to ensure that
                                         // the config is exactly what we want...
-                                        AddLineToResults("Set config on profile: " + setConfigResult.ProfileName + " succeeded\n Forcing profile to not continuous mode.");
-                                        DWSwitchContinuousMode switchContinuous = new DWSwitchContinuousMode(false, this, mProfileName, 30000);
-                                        switchContinuous.Execute((switchContinuousResult) =>
-                                        {
-                                            if (string.IsNullOrEmpty(switchContinuousResult.Error))
-                                            {
-                                                // Force "Not Continuous" mode succeeded.
-                                                AddLineToResults("Params switched to not continuous on profile: " + switchContinuousResult.ProfileName + " succeeded");
-                                                // Let's calculate the elapsed time since the begining of the process
-                                                Date current = new Date();
-                                                long timeDiff = current.Time - mProfileProcessingStartDate.Time;
-                                                AddLineToResults("Check+Create+Set+Switch took: " + timeDiff + " ms to process.");
-                                                AddLineToResults(mSeparator);
-                                            }
-                                            else
-                                            {
-                                                AddLineToResults("Error switching params to not continuous on profile: " + switchContinuousResult.ProfileName + "\n" + switchContinuousResult.Error);
-                                                AddLineToResults(mSeparator);
-                                            }
-                                        });
+                                        AddLineToResults("Set config on profile: " + setConfigResult.ProfileName + " succeeded.");
+                                        Date current = new Date();
+                                        long timeDiff = current.Time - mProfileProcessingStartDate.Time;
+                                        AddLineToResults("Check+Create+Set took: " + timeDiff + " ms to process.");
+                                        AddLineToResults(mSeparator);
                                     }
                                     else
                                     {

@@ -14,35 +14,37 @@ namespace DataCaptureReceiver
 {
     public class DWProfileSetConfig : DWProfileCommandBase
     {
-        protected static String mIntentAction = null;
-        protected static String mIntentCategory = null;
-
-        public DWProfileSetConfig(string intentAction, string intentCategory, Context aContext, string aProfile, long aTimeOut) : base(aContext, aProfile, aTimeOut)
+        public class DWProfileSetConfigSettings : DWProfileBase.DWSettings
         {
-            mIntentAction = intentAction;
-            mIntentCategory = intentCategory;
+            public bool AggressiveMode = false;
+            public String IntentAction = null;
+            public String IntentCategory = null;
         }
 
-        public new void Execute(Action<CommandBaseResults> callback)
+        public DWProfileSetConfig(Context aContext) : base(aContext)
+        {
+        }
+
+        public void Execute(DWProfileSetConfigSettings settings, Action<CommandBaseResults> callback)
         {
             /*
             Call base class Execute to register command result
             broadcast receiver and launch timeout mechanism
              */
-            base.Execute(callback);
+            base.Execute(settings, callback);
 
             /*
             Create the profile
              */
-            SetProfileConfig(mProfileName);
+            SetProfileConfig(settings);
         }
 
-        private void SetProfileConfig(String profileName)
+        private void SetProfileConfig(DWProfileSetConfigSettings settings)
         {
             // (Re)Configuration du profil via l'intent SET_PROFILE
             // NB : on peut envoyer cet intent sans soucis même si le profil est déjà configuré
             Bundle profileConfig = new Bundle();
-            profileConfig.PutString("PROFILE_NAME", profileName);
+            profileConfig.PutString("PROFILE_NAME", settings.ProfileName);
             profileConfig.PutString("PROFILE_ENABLED", "true");
             profileConfig.PutString("CONFIG_MODE", "UPDATE");
 
@@ -54,6 +56,42 @@ namespace DataCaptureReceiver
 
             // Configuration des différents plugins
             List<IParcelable> pluginConfigs = new List<IParcelable>();
+
+            // Configuration du plugin BARCODE
+            Bundle barcodePluginConfig = new Bundle();
+            barcodePluginConfig.PutString("PLUGIN_NAME", "BARCODE");
+            barcodePluginConfig.PutString("RESET_CONFIG", "true");
+
+            Bundle barcodeProps = new Bundle();
+            barcodeProps.PutString("aim_mode", "on");
+            barcodeProps.PutString("lcd_mode", "3");
+
+            // Use this for Datawedge < 6.7
+            //barcodeProps.putString("scanner_selection", "auto");
+
+            // Use this for Datawedge >= 6.7
+            barcodeProps.PutString("scanner_selection_by_identifier", "INTERNAL_IMAGER");
+
+            if (settings.AggressiveMode)
+            {
+                // Super aggressive continuous mode without beam timer and no timeouts
+                barcodeProps.PutString("aim_type", "5");
+                barcodeProps.PutInt("beam_timer", 0);
+                barcodeProps.PutString("different_barcode_timeout", "0");
+                barcodeProps.PutString("same_barcode_timeout", "0");
+
+            }
+            else
+            {
+                // Standard mode with beam timer and same/different timeout
+                barcodeProps.PutString("aim_type", "3");
+                barcodeProps.PutInt("beam_timer", 5000);
+                barcodeProps.PutString("different_barcode_timeout", "500");
+                barcodeProps.PutString("same_barcode_timeout", "500");
+            }
+            barcodePluginConfig.PutBundle("PARAM_LIST", barcodeProps);
+            pluginConfigs.Add(barcodePluginConfig);
+
 
             // Configuration du plugin KEYSTROKE
             Bundle keystrokePluginConfig = new Bundle();
@@ -70,8 +108,8 @@ namespace DataCaptureReceiver
             intentPluginConfig.PutString("RESET_CONFIG", "true");
             Bundle intentProps = new Bundle();
             intentProps.PutString("intent_output_enabled", "true");
-            intentProps.PutString("intent_action", mIntentAction);
-            intentProps.PutString("intent_category", mIntentCategory);
+            intentProps.PutString("intent_action", settings.IntentAction);
+            intentProps.PutString("intent_category", settings.IntentCategory);
             intentProps.PutString("intent_delivery", "2");
             intentPluginConfig.PutBundle("PARAM_LIST", intentProps);
             pluginConfigs.Add(intentPluginConfig);

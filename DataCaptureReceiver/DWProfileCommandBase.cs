@@ -20,7 +20,7 @@ namespace DataCaptureReceiver
         */
         protected String mCommandIdentifier = "";
 
-        public DWProfileCommandBase(Context aContext, String aProfile, long aTimeOut) : base(aContext, aProfile, aTimeOut)
+        public DWProfileCommandBase(Context aContext) : base(aContext)
         {
             mBroadcastReceiver = new DataWedgeActionResultReceiver(this);
         }
@@ -48,7 +48,7 @@ namespace DataCaptureReceiver
          */
         protected DataWedgeActionResultReceiver mBroadcastReceiver = null;
 
-        protected virtual void Execute(Action<CommandBaseResults> callback)
+        protected virtual void Execute(DWSettings settings, Action<CommandBaseResults> callback)
         {
             mCommandBaseCallback = callback;
 
@@ -64,7 +64,7 @@ namespace DataCaptureReceiver
             /*
             Launch timeout mechanism
              */
-            base.Execute();
+            base.Execute(settings);
         }
 
         protected void SendDataWedgeIntentWithExtraRequestResult(String action, String extraKey, String extraValue)
@@ -73,7 +73,7 @@ namespace DataCaptureReceiver
             dwIntent.SetAction(action);
             dwIntent.PutExtra(extraKey, extraValue);
             dwIntent.PutExtra("SEND_RESULT", "true");
-            mCommandIdentifier = mProfileName + new Date().Time;
+            mCommandIdentifier = Settings.ProfileName + new Date().Time;
             dwIntent.PutExtra("COMMAND_IDENTIFIER", mCommandIdentifier);
             mContext.SendBroadcast(dwIntent);
         }
@@ -84,7 +84,7 @@ namespace DataCaptureReceiver
             dwIntent.SetAction(action);
             dwIntent.PutExtra(extraKey, extras);
             dwIntent.PutExtra("SEND_RESULT", "true");
-            mCommandIdentifier = mProfileName + new Date().Time;
+            mCommandIdentifier = Settings.ProfileName + new Date().Time;
             dwIntent.PutExtra("COMMAND_IDENTIFIER", mCommandIdentifier);
             mContext.SendBroadcast(dwIntent);
         }
@@ -132,7 +132,7 @@ namespace DataCaptureReceiver
 
                     if (mCommandBase.mCommandBaseCallback != null)
                     {
-                        mCommandBase.mCommandBaseCallback(new CommandBaseResults() { ProfileName = mCommandBase.mProfileName, Action = action, Command = command, Result = result, ResultInfo = resultInfo, CommandIdentifier = commandidentifier, Error = null });
+                        mCommandBase.mCommandBaseCallback(new CommandBaseResults() { ProfileName = mCommandBase.Settings.ProfileName, Action = action, Command = command, Result = result, ResultInfo = resultInfo, CommandIdentifier = commandidentifier, Error = null });
                         mCommandBase.CleanAll();
                     }
                 }
@@ -141,7 +141,7 @@ namespace DataCaptureReceiver
 
         protected override void CleanAll()
         {
-            mProfileName = "";
+            Settings.ProfileName = "";
             mCommandBaseCallback = null;
             mContext.ApplicationContext.UnregisterReceiver(mBroadcastReceiver);
             base.CleanAll();
@@ -154,7 +154,7 @@ namespace DataCaptureReceiver
         {
             if (mCommandBaseCallback != null)
             {
-                mCommandBaseCallback(new CommandBaseResults() { ProfileName = mProfileName, Action = null, Command = null, Result = null, ResultInfo = null, CommandIdentifier = null, Error = error });
+                mCommandBaseCallback(new CommandBaseResults() { ProfileName = Settings.ProfileName, Action = null, Command = null, Result = null, ResultInfo = null, CommandIdentifier = null, Error = error });
                 CleanAll();
             }
         }
