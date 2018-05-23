@@ -50,6 +50,14 @@ namespace DataCaptureReceiver
 
         protected virtual void Execute(DWSettings settings, Action<CommandBaseResults> callback)
         {
+            /*
+            Launch timeout mechanism
+             */
+            base.Execute(settings);
+
+            /* 
+            Setup callback
+            */
             mCommandBaseCallback = callback;
 
             IntentFilter intentFilter = new IntentFilter();
@@ -60,11 +68,6 @@ namespace DataCaptureReceiver
             Register receiver for resutls
              */
             mContext.ApplicationContext.RegisterReceiver(mBroadcastReceiver, intentFilter);
-
-            /*
-            Launch timeout mechanism
-             */
-            base.Execute(settings);
         }
 
         protected void SendDataWedgeIntentWithExtraRequestResult(String action, String extraKey, String extraValue)
