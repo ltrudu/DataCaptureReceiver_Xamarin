@@ -58,6 +58,7 @@
     <Compile Include="DWProfileBase.cs" />
     <Compile Include="DWProfileChecker.cs" />
     <Compile Include="DWProfileCommandBase.cs" />
+    <Compile Include="DWProfileDelete.cs" />
     <Compile Include="DWProfileCreate.cs" />
     <Compile Include="DWProfileSetConfig.cs" />
     <Compile Include="DWSwitchContinuousMode.cs" />
